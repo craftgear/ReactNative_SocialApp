@@ -32,7 +32,7 @@ export default class ReactNative_SocialApp extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <RootNavigator/>
+        <RootNavigator ref="rootNavigator"/>
       </View>
     );
   }
