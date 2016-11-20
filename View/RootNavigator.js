@@ -1,10 +1,14 @@
 import React, { Component } from 'react';
 import { Navigator, StatusBar, StyleSheet, Text, View } from 'react-native';
 
-import StyleVars from 'Socail/StyleVars';
-import SharedStyles from 'Social/SharedStyles';
+import StyleVars from '../StyleVars';
+import SharedStyles from '../SharedStyles';
 
 const styles = StyleSheet.create({
+  sceneContainer: {
+    flex: 1,
+    paddingTop: Navigator.NavigationBar.Styles.General.TotalNavHeight
+  },
   navBar: {
     backgroundColor: StyleVars.Colors.navBarBackground,
     borderBottomColor: "rgba(255,255,255,0.5)",
@@ -44,6 +48,25 @@ const NavigationBarRouteMapper = {
 };
 
 export default class RootNavigator extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hideNavigationBar: false };
+  }
+
+  componentDidMoutn() {
+    this._setupRoute(this._getInitialRoute());
+  }
+
+  componentWillUnmount() {
+    if (this._listeners) {
+      this._listners.forEach(listener => listener.remove());
+    }
+  }
+
+  onNavWillFocus(route) {
+    this._setupRoute(route.currentTarget.currentRoute);
+  }
+
   render() {
     let navigationBar = (
       <Navigator.NavigationBar
@@ -61,5 +84,77 @@ export default class RootNavigator extends Component {
 
       </Navigator>
     )
+  }
+
+  renderScene(route, navigator) {
+    let style = route.hideNavigationBar ? { paddingTop: 0 } : {};
+    return (
+      <View styles={[styles.sceneCotainer, style]}>
+        <route.component
+          navigator={navigator}
+          back={() => this.back()}
+          backToHome={() => this.backToHom9}
+          toRoute={(route, args) => this.toRoute(route, args)}
+          replaceRoute={(route,args) => this.replaceRoute(route, args)}
+          />
+      </View>
+    )
+  }
+
+  back() {
+    this.navigator.pop();
+  }
+
+  backToHome() {
+    this.navigator.popToTop();
+  }
+
+  toRoute(route, args) {
+    if ('string' != typeof route || (route = Routes.get(route, args))) {
+      this.navigator.push(route);
+    }
+  }
+
+  replaceRoute(route, args) {
+    if ('string' != typeof route || (route = Routes.get(route, args))) {
+      this.navigator.replace(route);
+    }
+  }
+
+  _getInitialRoute() {
+    return Routes.home();
+  }
+
+  _setNavigatorRef(navigator) {
+    if (navigator !== this.navigator) {
+      this.navigator = navigator;
+
+      if (navigator) {
+        this._listeners = [
+          navigator.navigationCotext.addListener("willfocus", this.onNavWillFocus.bind(this))
+        ];
+      } else {
+        if (this._listeners) {
+          this._listeners.forEach(listener => listener.remove());
+        }
+      }
+    }
+  }
+
+  _setupRoute(route) {
+    if (route) {
+      let state = {};
+
+      if (route.hideNavigationBar && this.state.hideNavigationBar !== route.hideNavigationBar) {
+        state.hideNavigationBar = route.hideNavigationBar;
+      }
+      if (route.statusBarStyle && this.state.statusBarStyle !== route.statusBarStyle) {
+        state.statusBarStyle = route.statusBarStyle;
+        StatusBar.setBarStyle(route.statusBarStyle, true);
+        StatusBar.setHidden(false, 'slide');
+      }
+
+      this.setState(state);
+    }
   }
 }
